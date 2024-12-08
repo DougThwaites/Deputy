@@ -2,6 +2,7 @@
 
 namespace Deputy\Traits;
 
+use Illuminate\Support\Carbon;
 use Saloon\Http\Response;
 use Saloon\Http\PendingRequest;
 
@@ -10,6 +11,9 @@ trait HasRateCache
     public function bootHasRateCache(PendingRequest $pendingRequest): void
     {
         $pendingRequest->middleware()->onResponse(function (Response $response): void {
+
+            // Fallback to default handling of 429 responses
+            if($response->status() === 429) return;
 
             // Skip responses that weren't cacheable
             if (!method_exists($response, 'isCached')) return;
@@ -23,14 +27,14 @@ trait HasRateCache
             // Decrement limits
             foreach ($this->getLimits() as $limit) {
 
-                // Skip the limiter response
-                if ($limit->usesResponse()) continue;
-
                 // Set rate limit store
                 $limit->update($store);
 
-                // Decrement the limit
-                $limit->hit(-1);
+                // Reset too many attempts limit timer or decrement all other limits
+                $limit->usesResponse()
+                    ? $limit->resetLimit()
+                    : $limit->hit(-1);
+
                 $limit->save($store);
 
             }
