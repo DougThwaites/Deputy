@@ -23,9 +23,9 @@ To use this package add the traits and methods for Rate Limiting and Caching as 
     class CoolApiConnector extends Connector  
     {  
         use HasRateLimits;
-		use HasCaching;    
+        use HasCaching;    
         use HasRateCache;
-	}
+    }
 
 That's it 🤠
 
